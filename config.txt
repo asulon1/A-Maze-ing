@@ -10,4 +10,4 @@ EXIT=19,14
 OUTPUT_FILE=maze.txt
 PERFECT=True
 
-#TODO create SEED=int
+SEED=4

@@ -6,12 +6,14 @@
 #  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/03/20 01:38:16 by asulon          ###   ########.fr        #
+#  Updated: 2026/03/22 14:08:08 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
 from typing import Dict, Any
 import sys
+
+from mazegen import MazeGenerator
 
 
 class ConfigError(Exception):
@@ -58,9 +60,10 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
         config['HEIGHT'] = int(config['HEIGHT'])
         config['ENTRY'] = tuple(map(int, config['ENTRY'].split(',')))
         config['EXIT'] = tuple(map(int, config['EXIT'].split(',')))
-
         config['PERFECT'] = config['PERFECT'].upper() in [
             "Y", "TRUE", '1', 'YES']
+        if 'SEED' in config:
+            config['SEED'] = int(config['SEED'])
     except (ValueError, TypeError):
         print("Error: Invalid value type in configuration.")
         sys.exit(1)
@@ -86,10 +89,21 @@ def main():
         sys.exit(1)
     raw_config = parse_config(sys.argv[1])
     config = validate_config(raw_config)
-    print(config)
-    # TODO: init maze generator
-    # create maze
-    pass
+
+    try:
+        generator = MazeGenerator(
+            width=config['WIDTH'],
+            height=config['HEIGHT'],
+            seed=config.get('SEED'),
+            entry=config['ENTRY'],
+            exit=config['EXIT'],
+            perfect=config['PERFECT']
+        )
+        # TODO: init maze generator
+        # create maze
+    except ValueError as error:
+        print(f"Error: {error}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
