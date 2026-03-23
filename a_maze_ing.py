@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/03/22 14:08:08 by asulon          ###   ########.fr        #
+#  Updated: 2026/03/23 21:15:06 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -99,6 +99,9 @@ def main():
             exit=config['EXIT'],
             perfect=config['PERFECT']
         )
+        generator.generate()
+        print("Maze generated successfully.")
+
         # TODO: init maze generator
         # create maze
     except ValueError as error:
