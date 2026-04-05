@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 2026/03/22 12:22:30 by asulon          #+#    #+#               #
-#  Updated: 2026/03/23 21:54:15 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/05 22:59:14 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -19,20 +19,21 @@ class Cell:
     Represents a single cell within the maze's grid.
 
     Attributes:
-        x (int): The x-coordinate of the cell.
-        y (int): The y-coordinate of the cell.
-        walls (dict[str, bool]): A dictionary tracking the state of the four
-                                 walls ('N', 'E', 'S', 'W'). True means a
-                                 wall exists.
+        x: The x-coordinate of the cell.
+        y: The y-coordinate of the cell.
+        walls: States of walls ('N', 'E', 'S', 'W').
+                                True wall exists.
         visited (bool): A flag used by generation and solving algorithms.
+        pattern: 42 parterns
     """
 
-    def __init__(self, x: int, y: int):
-        self.x = x
-        self.y = y
-        self.walls = {'N': True, 'E': True, 'S': True, 'W': True}
-        self.visited = False
-        self.pattern = False
+    def __init__(self, x: int, y: int) -> None:
+        self.x: int = x
+        self.y: int = y
+        self.walls: dict[str, bool] = {
+            'N': True, 'E': True, 'S': True, 'W': True}
+        self.visited: bool = False
+        self.pattern: bool = False
 
 
 class MazeGenerator:
@@ -42,12 +43,12 @@ class MazeGenerator:
                  perfect: bool = True) -> None:
         if width <= 0 or height <= 0:
             raise ValueError("Width and height must be positive.")
-        self.width = width
-        self.height = height
-        self.seed = seed
-        self.entry = entry
-        self.exit = exit
-        self.perfect = perfect
+        self.width: int = width
+        self.height: int = height
+        self.seed: Optional[int] = seed
+        self.entry: Tuple[int, int] = entry
+        self.exit: Tuple[int, int] = exit
+        self.perfect: bool = perfect
         self.grid: List[List[Cell]] = []
         self.solution: Optional[str] = None
 
@@ -63,9 +64,8 @@ class MazeGenerator:
 
     def _carve_42_pattern(self) -> None:
         """
-        Carves the '42' pattern into the maze by creating fully walled-off
-        cells. These cells are marked as 'visited' to be ignored by the
-        generation algorithm.
+        Carves the '42' pattern into the maze. cells are marked as
+        'visited' to be ignored by the generation algorithm.
         """
         # Define the shape of "4" and "2" as coordinates relative to a 5x3 box.
         pattern_4 = [
@@ -115,7 +115,23 @@ class MazeGenerator:
             start_x = random.randint(0, self.width - 1)
             start_y = random.randint(0, self.height - 1)
             start_cell = self.grid[start_y][start_x]
+
         start_cell.visited = True
         stack.append(start_cell)
-        for s in stack:
-            print(s)
+
+        while stack:
+            pass
+
+    def get_grid(self) -> List[List[Cell]]:
+        """Returns the generated maze grid."""
+        return self.grid
+
+    def get_solution(self) -> Optional[str]:
+        """
+        Returns the solution path if the maze has been solved.
+
+        Returns:
+            Optional[str]: The solution path, or None if solve() has not
+                           been called or no path exists.
+        """
+        return self.solution
