@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 2026/03/22 12:22:30 by asulon          #+#    #+#               #
-#  Updated: 2026/04/05 22:59:14 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/06 13:06:56 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -84,33 +84,125 @@ class MazeGenerator:
             return
 
         # Top-left starting pos
-        start_x = self.width - 8 // 2
-        start_y = self.height - 5 // 2
 
-        # Carve "4" by setting walls as visited
-        for pos_x, pos_y in pattern_4:
-            x, y = start_x + pos_x, start_y + pos_y
+        start_x = (self.width - 8) // 2
+        start_y = (self.height - 5) // 2
+
+        # Carve the '4' by setting walls and marking as visited.
+        for dx, dy in pattern_4:
+            x, y = start_x + dx, start_y + dy
             if 0 <= x < self.width and 0 <= y < self.height:
                 cell = self.grid[y][x]
                 cell.visited = True
                 cell.pattern = True
                 for wall in cell.walls:
                     cell.walls[wall] = True
-        # Carve "2" by setting walls as visited
-        for pos_x, pos_y in pattern_2:
-            x, y = start_x + pos_x, start_y + pos_y
+
+        # Carve the '2', offset to the right of the '4'.
+        for dx, dy in pattern_2:
+            x, y = start_x + dx + 4, start_y + dy
             if 0 <= x < self.width and 0 <= y < self.height:
                 cell = self.grid[y][x]
                 cell.visited = True
                 cell.pattern = True
+
                 for wall in cell.walls:
                     cell.walls[wall] = True
+
+    def _get_unvisited_neighbors(self, cell: Cell) -> List[Cell]:
+        """Return unvisited cells next to given cell"""
+        neighbors = []
+        x, y = cell.x, cell.y
+
+        if y > 0 and not self.grid[y - 1][x].visited:
+            neighbors.append(self.grid[y - 1][x])
+        if y < self.height - 1 and not self.grid[y + 1][x].visited:
+            neighbors.append(self.grid[y + 1][x])
+        if x < self.width - 1 and not self.grid[y][x + 1].visited:
+            neighbors.append(self.grid[y][x + 1])
+        if x > 0 and not self.grid[y][x - 1].visited:
+            neighbors.append(self.grid[y][x - 1])
+        return neighbors
+
+    def _creates_large_open_area(self, cell1: Cell, cell2: Cell) -> bool:
+        """
+        Heuristic check to prevent creating 3x3 open areas.
+
+        It works by checking if removing a wall would complete a 2x2 open
+        square, which is a precursor to larger open areas.
+        """
+        # Check for vertical move creating a 2x2 open area
+        if cell1.x == cell2.x:
+            x = cell1.x
+            y = min(cell1.y, cell2.y)
+            # Check left side
+            if (x > 0 and not self.grid[y][x].walls['W'] and
+                    not self.grid[y+1][x].walls['W']):
+                if (not self.grid[y][x-1].walls['S'] and
+                        not self.grid[y+1][x-1].walls['N']):
+                    return True
+            # Check right side
+            if (x < self.width - 1 and not self.grid[y][x].walls['E'] and
+                    not self.grid[y+1][x].walls['E']):
+                if (not self.grid[y][x+1].walls['S'] and
+                        not self.grid[y+1][x+1].walls['N']):
+                    return True
+        # Check for horizontal move creating a 2x2 open area
+        else:
+            y = cell1.y
+            x = min(cell1.x, cell2.x)
+            # Check above
+            if (y > 0 and not self.grid[y][x].walls['N'] and
+                    not self.grid[y][x+1].walls['N']):
+                if (not self.grid[y-1][x].walls['E'] and
+                        not self.grid[y-1][x+1].walls['W']):
+                    return True
+            # Check below
+            if (y < self.height - 1 and not self.grid[y][x].walls['S'] and
+                    not self.grid[y][x+1].walls['S']):
+                if (not self.grid[y+1][x].walls['E'] and
+                        not self.grid[y+1][x+1].walls['W']):
+                    return True
+        return False
+
+    def _remove_wall(self, current: Cell, next_cell: Cell):
+        """Removes the wall between two adjacent cells."""
+        dx = next_cell.x - current.x
+        dy = next_cell.y - current.y
+
+        if dx == 1:  # Moved East
+            current.walls['E'], next_cell.walls['W'] = False, False
+        elif dx == -1:  # Moved West
+            current.walls['W'], next_cell.walls['E'] = False, False
+        elif dy == 1:  # Moved South
+            current.walls['S'], next_cell.walls['N'] = False, False
+        elif dy == -1:  # Moved North
+            current.walls['N'], next_cell.walls['S'] = False, False
+
+    def _open_entry_exit_walls(self):
+        """Opens the external walls for the entry and exit points."""
+        if self.entry[1] == 0:
+            self.grid[self.entry[1]][self.entry[0]].walls['N'] = False
+        if self.entry[0] == 0:
+            self.grid[self.entry[1]][self.entry[0]].walls['W'] = False
+        if self.entry[1] == self.height - 1:
+            self.grid[self.entry[1]][self.entry[0]].walls['S'] = False
+        if self.entry[0] == self.width - 1:
+            self.grid[self.entry[1]][self.entry[0]].walls['E'] = False
+ 
+        if self.exit[1] == 0:
+            self.grid[self.exit[1]][self.exit[0]].walls['N'] = False
+        if self.exit[0] == 0:
+            self.grid[self.exit[1]][self.exit[0]].walls['W'] = False
+        if self.exit[1] == self.height - 1:
+            self.grid[self.exit[1]][self.exit[0]].walls['S'] = False
+        if self.exit[0] == self.width - 1:
+            self.grid[self.exit[1]][self.exit[0]].walls['E'] = False
 
     def generate(self):
         stack: List[Cell] = []
 
         start_cell = None
-
         while start_cell is None or start_cell.visited:
             start_x = random.randint(0, self.width - 1)
             start_y = random.randint(0, self.height - 1)
@@ -120,7 +212,24 @@ class MazeGenerator:
         stack.append(start_cell)
 
         while stack:
-            pass
+            current_cell = stack[-1]
+            neighbors = self._get_unvisited_neighbors(current_cell)
+            valid_neighbors = [
+                n for n in neighbors
+                if not self._creates_large_open_area(current_cell, n)
+            ]
+            if valid_neighbors:
+                # If there's a valid neighbor, pick one randomly.
+                next_cell = random.choice(valid_neighbors)
+                self._remove_wall(current_cell, next_cell)
+                next_cell.visited = True
+                stack.append(next_cell)  # Move to the next cell.
+            else:
+                # If there are no valid neighbors, backtrack.
+                stack.pop()
+        # Ensure the entry and exit points have an opening on the maze's
+        # outer border.
+        self._open_entry_exit_walls()
 
     def get_grid(self) -> List[List[Cell]]:
         """Returns the generated maze grid."""

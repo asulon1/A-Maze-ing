@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/05 22:55:38 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/06 11:59:32 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -30,7 +30,6 @@ def parse_config(filename: str) -> Dict[str, str]:
             for line in config_list:
                 if line.startswith("#"):
                     continue
-                """split Key value"""
                 splited_line = line.split("=")
                 if len(splited_line[0]) > 0:
                     config.update({splited_line[0]: splited_line[1]})
@@ -107,7 +106,7 @@ def write_maze_to_file(generator: MazeGenerator, file: str):
             f.write('\n')
             f.write(f"{generator.entry[0]},{generator.entry[1]}\n")
             f.write(f"{generator.exit[0]},{generator.exit[1]}\n")
-            # add solution
+            # TODO: add solution
     except IOError as error:
         print(f"Error writing to file '{file}': {error}")
         sys.exit(1)
