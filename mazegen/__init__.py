@@ -3,10 +3,10 @@
 #                                                      :::      ::::::::    #
 #  __init__.py                                       :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
+#  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 2026/03/22 12:22:30 by asulon          #+#    #+#               #
-#  Updated: 2026/04/06 13:06:56 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/10 19:57:25 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -189,7 +189,7 @@ class MazeGenerator:
             self.grid[self.entry[1]][self.entry[0]].walls['S'] = False
         if self.entry[0] == self.width - 1:
             self.grid[self.entry[1]][self.entry[0]].walls['E'] = False
- 
+
         if self.exit[1] == 0:
             self.grid[self.exit[1]][self.exit[0]].walls['N'] = False
         if self.exit[0] == 0:
@@ -229,11 +229,52 @@ class MazeGenerator:
                 stack.pop()
         # Ensure the entry and exit points have an opening on the maze's
         # outer border.
-        self._open_entry_exit_walls()
+        # self._open_entry_exit_walls()
 
     def get_grid(self) -> List[List[Cell]]:
         """Returns the generated maze grid."""
         return self.grid
+
+    def solve(self) -> Optional[str]:
+        start_cell = self.grid[self.entry[1]][self.entry[0]]
+        end_cell = self.grid[self.exit[1]][self.exit[0]]
+
+        queue: List[Tuple[Cell, str]] = [(start_cell, "")]
+        visited: set[Cell] = {start_cell}
+
+        while queue:
+            current_cell, path = queue.pop(0)
+
+            # current_cell reach the end
+            if current_cell == end_cell:
+                self.solution = path
+                return path
+
+            # explore neighbors
+            x, y = current_cell.x, current_cell.y
+
+            # North
+            if (not current_cell.walls['N'] and y > 0 and
+                    self.grid[y-1][x] not in visited):
+                visited.add(self.grid[y-1][0])
+                queue.append((self.grid[y-1][x], path + "N"))
+            # East
+            if (not current_cell.walls['E'] and x < self.width - 1 and
+                    self.grid[y][x+1] not in visited):
+                visited.add(self.grid[y][x+1])
+                queue.append((self.grid[y][x+1], path + "E"))
+            # South
+            if (not current_cell.walls['S'] and y < self.height - 1 and
+                    self.grid[y+1][x] not in visited):
+                visited.add(self.grid[y+1][x])
+                queue.append((self.grid[y+1][x], path + "S"))
+            # West
+            if (not current_cell.walls['W'] and x > 0 and
+                    self.grid[y][x-1] not in visited):
+                visited.add(self.grid[y][x-1])
+                queue.append((self.grid[y][x-1], path + "W"))
+        self.solution = None
+        return None
 
     def get_solution(self) -> Optional[str]:
         """

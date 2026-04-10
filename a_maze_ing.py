@@ -3,10 +3,10 @@
 #                                                      :::      ::::::::    #
 #  a_maze_ing.py                                     :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
+#  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/06 11:59:32 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/10 19:54:19 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -84,7 +84,7 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
 
 def write_maze_to_file(generator: MazeGenerator, file: str):
     """Writes the maze structure and solution to a file."""
-    wall = {'N': 1, 'E': 2, 'S': 4, 'W': 8}
+    wall = {'N': 0, 'E': 1, 'S': 2, 'W': 3}
 
     try:
         with open(file, 'w') as f:
@@ -106,7 +106,9 @@ def write_maze_to_file(generator: MazeGenerator, file: str):
             f.write('\n')
             f.write(f"{generator.entry[0]},{generator.entry[1]}\n")
             f.write(f"{generator.exit[0]},{generator.exit[1]}\n")
-            # TODO: add solution
+            solution = generator.get_solution()
+            if (solution):
+                f.write(solution + '\n')
     except IOError as error:
         print(f"Error writing to file '{file}': {error}")
         sys.exit(1)
@@ -201,8 +203,8 @@ def display_maze(generator):
                 line += C_END
             elif cell == 'X':
                 line += C_SOL
-            # elif cell == 'F':
-            #     line += C_42
+            elif cell == 'F':
+                line += C_42
             else:
                 line += C_PATH
         print(line)
@@ -227,11 +229,16 @@ def main():
         generator.generate()
         print("Maze generated successfully.")
 
+        if generator.solve():
+            print("Solution found.")
+        else:
+            print("No solution found for the maze.")
+
         write_maze_to_file(generator, config['OUTPUT_FILE'])
         print(f"Maze written to {config['OUTPUT_FILE']}")
 
         display_maze(generator)
-        # TODO: add solution path
+
     except ValueError as error:
         print(f"Error: {error}")
         sys.exit(1)
