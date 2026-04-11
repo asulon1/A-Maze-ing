@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 2026/03/22 12:22:30 by asulon          #+#    #+#               #
-#  Updated: 2026/04/10 19:57:25 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/11 14:52:02 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -51,6 +51,14 @@ class MazeGenerator:
         self.perfect: bool = perfect
         self.grid: List[List[Cell]] = []
         self.solution: Optional[str] = None
+        self.colors: dict[str, str] = {
+            "WALL": "\033[97m██\033[0m",      # White
+            "PATH": "  ",                   # Empty
+            "START":  "\033[35m██\033[0m",  # Purple (entry)
+            "END": "\033[31m██\033[0m",     # Red (exit)
+            "SOL":  "\033[42m  \033[0m",    # Green (solution path)
+            "42": "\033[33m██\033[0m"       # Yellow "42" pattern
+        }
 
         if self.seed is not None:
             random.seed(self.seed)
@@ -234,6 +242,31 @@ class MazeGenerator:
     def get_grid(self) -> List[List[Cell]]:
         """Returns the generated maze grid."""
         return self.grid
+
+    def swap_color(self) -> None:
+        colors_list = ["1",  # Red
+                       "2",  # Green
+                       "3",  # Yellow
+                       "4",  # Blue
+                       "5",  # Purple
+                       "6",  # Cyan
+                       "7"
+                       ]
+        for key in self.colors.keys():
+            color = random.choice(colors_list)
+            colors_list.remove(color)
+            if key == "SOL":
+                self.colors[key] = f"\033[4{color}m  \033[0m"
+            elif key == "WALL":
+                self.colors[key] = f"\033[9{color}m██\033[0m"
+            else:
+                self.colors[key] = f"\033[3{color}m██\033[0m"
+
+    def display_solution_path(self) -> None:
+        if self.colors["SOL"] != self.colors["PATH"]:
+            self.colors["SOL"] = self.colors["PATH"]
+        else:
+            self.colors["SOL"] = "\033[42m  \033[0m"
 
     def solve(self) -> Optional[str]:
         start_cell = self.grid[self.entry[1]][self.entry[0]]

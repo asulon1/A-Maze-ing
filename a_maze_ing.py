@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/10 19:54:19 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/11 14:49:07 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -118,14 +118,6 @@ def display_maze(generator):
     grid = generator.get_grid()
     h, w = len(grid), len(grid[0])
 
-    # 1. On définit nos styles (chaque élément fait exactement 2 caractères de large)
-    C_WALL = "\033[97m██\033[0m"        # Blanc
-    C_PATH = "  "                       # Vide
-    C_START = "\033[35m██\033[0m"       # Violet (entrée)
-    C_END = "\033[31m██\033[0m"         # Rouge (sortie)
-    C_SOL = "\033[42m  \033[0m"         # Vert (chemin solution)
-    C_42 = "\033[33m██\033[0m"          # Jaune pour le motif "42"
-
     # 2. On crée une matrice de "tags" pour savoir quoi afficher à chaque pixel
     # 'W' = Wall, 'P' = Path, 'S' = Start, 'E' = End, 'X' = Solution, 'F' = motif 42
     render = [["W" for _ in range(2 * w + 1)] for _ in range(2 * h + 1)]
@@ -196,49 +188,86 @@ def display_maze(generator):
         line = ""
         for cell in row:
             if cell == 'W':
-                line += C_WALL
+                line += generator.colors["WALL"]
             elif cell == 'S':
-                line += C_START
+                line += generator.colors["START"]
             elif cell == 'E':
-                line += C_END
+                line += generator.colors["END"]
             elif cell == 'X':
-                line += C_SOL
+                line += generator.colors["SOL"]
             elif cell == 'F':
-                line += C_42
+                line += generator.colors["42"]
             else:
-                line += C_PATH
+                line += generator.colors["PATH"]
         print(line)
+
+
+def user_input(generator: MazeGenerator) -> int:
+    input_text = "=== A-Maze-ing ===\n" \
+        "1. Re-generate a new maze\n" \
+        "2. Show/Hide path from entry to exit\n" \
+        "3. Rotate maze color\n" \
+        "4. Exit\n" \
+        "Choise? (1-4): "
+
+    choise = 0
+    try:
+        while (choise != 4):
+            choise = int(input(input_text))
+            match choise:
+                case 1:
+                    generator = generate_maze()
+                case 2:
+                    generator.display_solution_path()
+                    display_maze(generator)
+                case 3:
+                    generator.swap_color()
+                    display_maze(generator)
+                case 4:
+                    sys.exit(1)
+                case _:
+                    raise ValueError
+    except ValueError:
+        print("\nInvalid value : Choose between 1-4\n")
+    finally:
+        return choise
+
+
+def generate_maze() -> MazeGenerator:
+    raw_config = parse_config(sys.argv[1])
+    config = validate_config(raw_config)
+
+    generator = MazeGenerator(
+        width=config['WIDTH'],
+        height=config['HEIGHT'],
+        seed=config.get('SEED'),
+        entry=config['ENTRY'],
+        exit=config['EXIT'],
+        perfect=config['PERFECT']
+    )
+    generator.generate()
+
+    if generator.solve():
+        print("Solution found.")
+    else:
+        print("No solution found for the maze.")
+
+    write_maze_to_file(generator, config['OUTPUT_FILE'])
+
+    display_maze(generator)
+    return generator
 
 
 def main():
     if (len(sys.argv) != 2):
         print(f"Usage: {sys.argv[0]} <config_file>")
         sys.exit(1)
-    raw_config = parse_config(sys.argv[1])
-    config = validate_config(raw_config)
 
     try:
-        generator = MazeGenerator(
-            width=config['WIDTH'],
-            height=config['HEIGHT'],
-            seed=config.get('SEED'),
-            entry=config['ENTRY'],
-            exit=config['EXIT'],
-            perfect=config['PERFECT']
-        )
-        generator.generate()
-        print("Maze generated successfully.")
-
-        if generator.solve():
-            print("Solution found.")
-        else:
-            print("No solution found for the maze.")
-
-        write_maze_to_file(generator, config['OUTPUT_FILE'])
-        print(f"Maze written to {config['OUTPUT_FILE']}")
-
-        display_maze(generator)
-
+        generator = generate_maze()
+        config = 0
+        while (config != 4):
+            config = user_input(generator)
     except ValueError as error:
         print(f"Error: {error}")
         sys.exit(1)
