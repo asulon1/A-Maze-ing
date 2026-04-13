@@ -3,10 +3,10 @@
 #                                                      :::      ::::::::    #
 #  __init__.py                                       :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
+#  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 2026/03/22 12:22:30 by asulon          #+#    #+#               #
-#  Updated: 2026/04/11 14:52:02 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/13 11:35:56 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -207,6 +207,143 @@ class MazeGenerator:
         if self.exit[0] == self.width - 1:
             self.grid[self.exit[1]][self.exit[0]].walls['E'] = False
 
+    def _bfs_path(self, forbidden_edge: Optional[Tuple[Tuple[int, int],
+                                                       Tuple[int, int]]] = None
+                  ) -> Optional[List[Tuple[int, int]]]:
+        """Internal BFS that returns one path from entry to exit as a list
+        of (x, y) coordinates. If ``forbidden_edge`` is provided, that
+        undirected edge is ignored during the search.
+        """
+
+        start = (self.entry[0], self.entry[1])
+        goal = (self.exit[0], self.exit[1])
+
+        queue: List[Tuple[int, int]] = [start]
+        came_from: dict[Tuple[int, int], Optional[Tuple[int, int]]] = {
+            start: None
+        }
+
+        # Helper to check whether we are trying to use the forbidden edge
+        def edge_is_forbidden(a: Tuple[int, int], b: Tuple[int, int]) -> bool:
+            if forbidden_edge is None:
+                return False
+            (fx1, fy1), (fx2, fy2) = forbidden_edge
+            return ((a[0] == fx1 and a[1] == fy1 and
+                     b[0] == fx2 and b[1] == fy2) or
+                    (a[0] == fx2 and a[1] == fy2 and
+                     b[0] == fx1 and b[1] == fy1))
+
+        while queue:
+            x, y = queue.pop(0)
+            if (x, y) == goal:
+                # Reconstruct path
+                path: List[Tuple[int, int]] = []
+                cur: Optional[Tuple[int, int]] = goal
+                while cur is not None:
+                    path.append(cur)
+                    cur = came_from[cur]
+                path.reverse()
+                return path
+
+            cell = self.grid[y][x]
+            # Explore neighbors depending on open walls
+            # North
+            if (not cell.walls['N'] and y > 0):
+                nx, ny = x, y - 1
+                if ((nx, ny) not in came_from and
+                        not edge_is_forbidden((x, y), (nx, ny))):
+                    came_from[(nx, ny)] = (x, y)
+                    queue.append((nx, ny))
+            # East
+            if (not cell.walls['E'] and x < self.width - 1):
+                nx, ny = x + 1, y
+                if ((nx, ny) not in came_from and
+                        not edge_is_forbidden((x, y), (nx, ny))):
+                    came_from[(nx, ny)] = (x, y)
+                    queue.append((nx, ny))
+            # South
+            if (not cell.walls['S'] and y < self.height - 1):
+                nx, ny = x, y + 1
+                if ((nx, ny) not in came_from and
+                        not edge_is_forbidden((x, y), (nx, ny))):
+                    came_from[(nx, ny)] = (x, y)
+                    queue.append((nx, ny))
+            # West
+            if (not cell.walls['W'] and x > 0):
+                nx, ny = x - 1, y
+                if ((nx, ny) not in came_from and
+                        not edge_is_forbidden((x, y), (nx, ny))):
+                    came_from[(nx, ny)] = (x, y)
+                    queue.append((nx, ny))
+
+        return None
+
+    def _has_multiple_solutions(self) -> bool:
+        """Returns True s'il existe au moins deux chemins distincts entre
+        l'entrée et la sortie.
+
+        On calcule d'abord un chemin avec BFS, puis on enlève virtuellement
+        chaque arête de ce chemin une par une. Si, pour au moins une arête,
+        un autre chemin existe encore, alors il y a plus d'une solution.
+        """
+
+        path = self._bfs_path()
+        if path is None or len(path) <= 1:
+            return False
+
+        # Parcourt chaque arête consécutive du chemin trouvé
+        for i in range(len(path) - 1):
+            a = path[i]
+            b = path[i + 1]
+            if self._bfs_path(forbidden_edge=(a, b)) is not None:
+                return True
+        return False
+
+    def _add_extra_passages(self) -> None:
+        """Ajoute des ouvertures supplémentaires pour créer des boucles.
+
+        On ouvre progressivement des murs entre cases voisines aléatoires
+        jusqu'à ce qu'il existe au moins deux chemins différents entre
+        l'entrée et la sortie (ou qu'il n'y ait plus de murs internes à
+        ouvrir).
+        """
+
+        if self._has_multiple_solutions():
+            return
+
+        # Liste de tous les murs internes possibles à ouvrir
+        candidates: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.grid[y][x]
+                if cell.pattern:
+                    continue
+                # Voisin Est
+                if x < self.width - 1:
+                    neighbor = self.grid[y][x + 1]
+                    if (not neighbor.pattern and
+                            cell.walls['E'] and neighbor.walls['W']):
+                        candidates.append(((x, y), (x + 1, y)))
+                # Voisin Sud
+                if y < self.height - 1:
+                    neighbor = self.grid[y + 1][x]
+                    if (not neighbor.pattern and
+                            cell.walls['S'] and neighbor.walls['N']):
+                        candidates.append(((x, y), (x, y + 1)))
+
+        random.shuffle(candidates)
+
+        for (x1, y1), (x2, y2) in candidates:
+            cell1 = self.grid[y1][x1]
+            cell2 = self.grid[y2][x2]
+
+            # Ouvre le mur entre les deux cases voisines
+            self._remove_wall(cell1, cell2)
+
+            # Dès qu'on détecte au moins deux solutions, on s'arrête
+            if self._has_multiple_solutions():
+                return
+
     def generate(self):
         stack: List[Cell] = []
 
@@ -222,10 +359,19 @@ class MazeGenerator:
         while stack:
             current_cell = stack[-1]
             neighbors = self._get_unvisited_neighbors(current_cell)
-            valid_neighbors = [
-                n for n in neighbors
-                if not self._creates_large_open_area(current_cell, n)
-            ]
+
+            # In perfect mode, we generate a classic DFS spanning tree so
+            # every (non-pattern) cell is reachable from any other one.
+            # The open-area heuristic is only applied in non-perfect mode,
+            # because it can otherwise leave some cells unvisited and break
+            # connectivity between entry and exit.
+            if self.perfect:
+                valid_neighbors = neighbors
+            else:
+                valid_neighbors = [
+                    n for n in neighbors
+                    if not self._creates_large_open_area(current_cell, n)
+                ]
             if valid_neighbors:
                 # If there's a valid neighbor, pick one randomly.
                 next_cell = random.choice(valid_neighbors)
@@ -238,6 +384,11 @@ class MazeGenerator:
         # Ensure the entry and exit points have an opening on the maze's
         # outer border.
         # self._open_entry_exit_walls()
+
+        # En mode non parfait, on ajoute des boucles pour qu'il existe
+        # plusieurs chemins possibles entre l'entrée et la sortie.
+        if not self.perfect:
+            self._add_extra_passages()
 
     def get_grid(self) -> List[List[Cell]]:
         """Returns the generated maze grid."""
@@ -289,7 +440,7 @@ class MazeGenerator:
             # North
             if (not current_cell.walls['N'] and y > 0 and
                     self.grid[y-1][x] not in visited):
-                visited.add(self.grid[y-1][0])
+                visited.add(self.grid[y-1][x])
                 queue.append((self.grid[y-1][x], path + "N"))
             # East
             if (not current_cell.walls['E'] and x < self.width - 1 and
