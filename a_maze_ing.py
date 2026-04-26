@@ -3,10 +3,10 @@
 #                                                      :::      ::::::::    #
 #  a_maze_ing.py                                     :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: klucchin <klucchin@student.42.fr>         +#+  +:+       +#+         #
+#  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/26 15:53:06 by klucchin        ###   ########.fr        #
+#  Updated: 2026/04/26 16:35:19 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -84,7 +84,7 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
 
 def write_maze_to_file(generator: MazeGenerator, file: str) -> None:
     """Writes the maze structure and solution to a file."""
-    wall = {'N': 0, 'E': 1, 'S': 2, 'W': 3}
+    wall = {'N': 1, 'E': 2, 'S': 4, 'W': 8}
 
     try:
         with open(file, 'w') as f:
@@ -93,13 +93,13 @@ def write_maze_to_file(generator: MazeGenerator, file: str) -> None:
                 for cell in row:
                     wall_value = 0
                     if cell.walls['N']:
-                        wall_value += wall['N']
+                        wall_value |= wall['N']
                     if cell.walls['E']:
-                        wall_value += wall['E']
+                        wall_value |= wall['E']
                     if cell.walls['S']:
-                        wall_value += wall['S']
+                        wall_value |= wall['S']
                     if cell.walls['W']:
-                        wall_value += wall['W']
+                        wall_value |= wall['W']
                     row_arr.append(f"{wall_value:X}")
                 f.write("".join(row_arr) + '\n')
 
