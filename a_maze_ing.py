@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/26 16:35:19 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/26 17:13:57 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -18,7 +18,7 @@ from mazegen import MazeGenerator
 
 class ConfigError(Exception):
     def __init__(self, message: str) -> None:
-        print(f"Configation Error : {message}")
+        print(f"Configation File Error : {message}")
 
 
 def parse_config(filename: str) -> Dict[str, str]:
@@ -59,26 +59,28 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
         config['HEIGHT'] = int(config['HEIGHT'])
         config['ENTRY'] = tuple(map(int, config['ENTRY'].split(',')))
         config['EXIT'] = tuple(map(int, config['EXIT'].split(',')))
-        config['PERFECT'] = config['PERFECT'].upper() in [
-            "Y", "TRUE", '1', 'YES']
+        perfect_raw = str(config['PERFECT']).strip().upper()
+
         if 'SEED' in config:
             config['SEED'] = int(config['SEED'])
     except (ValueError, TypeError):
-        print("Error: Invalid value type in configuration.")
-        sys.exit(1)
+        raise ConfigError("Invalid value type in configuration.")
 
     """Testing invalid values"""
     if config['WIDTH'] < 0 or config['HEIGHT'] < 0:
-        print("Error: WIDTH and HEIGHT must be positive integers.")
-        sys.exit(1)
+        raise ConfigError("WIDTH and HEIGHT must be positive integers.")
     w, h = config['WIDTH'], config['HEIGHT']
     if not (0 <= config['ENTRY'][0] <= w and 0 <= config['ENTRY'][1] <= h):
-        print("Error : Entry out of bounds")
+        raise ConfigError("Entry out of bounds")
     if not (0 <= config['EXIT'][0] <= w and 0 <= config['EXIT'][1] <= h):
-        print("Error : Entry out of bounds")
+        raise ConfigError("Exit out of bounds")
     if config['ENTRY'] == config['EXIT']:
-        print("Error: ENTRY and EXIT coordinates cannot be the same.")
-        sys.exit(1)
+        raise ConfigError(
+            "ENTRY and EXIT coordinates cannot be the same.")
+    if perfect_raw not in ("TRUE", "FALSE"):
+        raise ConfigError(
+            "Perfect must be bool")
+    config['PERFECT'] = (perfect_raw == "TRUE")
     return config
 
 
@@ -239,8 +241,10 @@ def user_input(generator: MazeGenerator) -> int:
 
 def generate_maze() -> MazeGenerator:
     raw_config = parse_config(sys.argv[1])
-    config = validate_config(raw_config)
-
+    try:
+        config = validate_config(raw_config)
+    except ConfigError:
+        sys.exit(1)
     generator = MazeGenerator(
         width=config['WIDTH'],
         height=config['HEIGHT'],
@@ -272,6 +276,9 @@ def main() -> None:
         config = 0
         while (config != 4):
             config = user_input(generator)
+    except KeyboardInterrupt:
+        print("Exit Program")
+        sys.exit(1)
     except ValueError as error:
         print(f"Error: {error}")
         sys.exit(1)
