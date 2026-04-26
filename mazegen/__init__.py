@@ -3,10 +3,10 @@
 #                                                      :::      ::::::::    #
 #  __init__.py                                       :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: klucchin <klucchin@student.42.fr>         +#+  +:+       +#+         #
+#  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 2026/03/22 12:22:30 by asulon          #+#    #+#               #
-#  Updated: 2026/04/26 15:52:47 by klucchin        ###   ########.fr        #
+#  Updated: 2026/04/26 17:23:08 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -51,13 +51,14 @@ class MazeGenerator:
         self.perfect: bool = perfect
         self.grid: List[List[Cell]] = []
         self.solution: Optional[str] = None
+        """ANSI color mapping for wall, path, start, end, solution, and 42."""
         self.colors: dict[str, str] = {
-            "WALL": "\033[97m██\033[0m",      # White
-            "PATH": "  ",                   # Empty
-            "START":  "\033[35m██\033[0m",  # Purple (entry)
-            "END": "\033[31m██\033[0m",     # Red (exit)
-            "SOL":  "\033[42m  \033[0m",    # Green (solution path)
-            "42": "\033[33m██\033[0m"       # Yellow "42" pattern
+            "WALL": "\033[97m██\033[0m",
+            "PATH": "  ",
+            "START":  "\033[35m██\033[0m",
+            "END": "\033[31m██\033[0m",
+            "SOL":  "\033[42m  \033[0m",
+            "42": "\033[33m██\033[0m"
         }
 
         if self.seed is not None:
@@ -75,7 +76,7 @@ class MazeGenerator:
         Carves the '42' pattern into the maze. cells are marked as
         'visited' to be ignored by the generation algorithm.
         """
-        # Define the shape of "4" and "2" as coordinates relative to a 5x3 box.
+        """Define the shapes of 4 and 2 in local coordinates."""
         pattern_4 = [
             (0, 0), (2, 0), (0, 1), (1, 1), (2, 1),
             (2, 2), (2, 3), (2, 4)
@@ -85,18 +86,17 @@ class MazeGenerator:
             (0, 3), (0, 4), (1, 4), (2, 4)
         ]
 
-        # Check if maze is large enough to put 42 in it
-        # (5x8 cells + borders)
+        """Skip 42 pattern when the maze is too small."""
         if self.width < 9 or self.height < 7:
             print("Warning: Maze too small to draw '42' pattern.")
             return
 
-        # Top-left starting pos
+        """Compute top-left origin of the centered 42 pattern."""
 
         start_x = (self.width - 8) // 2
         start_y = (self.height - 5) // 2
 
-        # Carve the '4' by setting walls and marking as visited.
+        """Apply the 4 pattern by freezing selected cells."""
         for dx, dy in pattern_4:
             x, y = start_x + dx, start_y + dy
             if 0 <= x < self.width and 0 <= y < self.height:
@@ -106,7 +106,7 @@ class MazeGenerator:
                 for wall in cell.walls:
                     cell.walls[wall] = True
 
-        # Carve the '2', offset to the right of the '4'.
+        """Apply the 2 pattern offset to the right."""
         for dx, dy in pattern_2:
             x, y = start_x + dx + 4, start_y + dy
             if 0 <= x < self.width and 0 <= y < self.height:
@@ -139,33 +139,34 @@ class MazeGenerator:
         It works by checking if removing a wall would complete a 2x2 open
         square, which is a precursor to larger open areas.
         """
-        # Check for vertical move creating a 2x2 open area
+        """Check vertical moves that would create a 2x2 opening."""
         if cell1.x == cell2.x:
             x = cell1.x
             y = min(cell1.y, cell2.y)
-            # Check left side
+            """Check potential opening on the left side."""
             if (x > 0 and not self.grid[y][x].walls['W'] and
                     not self.grid[y+1][x].walls['W']):
                 if (not self.grid[y][x-1].walls['S'] and
                         not self.grid[y+1][x-1].walls['N']):
                     return True
-            # Check right side
+            """Check potential opening on the right side."""
             if (x < self.width - 1 and not self.grid[y][x].walls['E'] and
                     not self.grid[y+1][x].walls['E']):
                 if (not self.grid[y][x+1].walls['S'] and
                         not self.grid[y+1][x+1].walls['N']):
                     return True
-        # Check for horizontal move creating a 2x2 open area
+
         else:
+            """Check horizontal moves that would create a 2x2 opening."""
             y = cell1.y
             x = min(cell1.x, cell2.x)
-            # Check above
+            """Check potential opening above."""
             if (y > 0 and not self.grid[y][x].walls['N'] and
                     not self.grid[y][x+1].walls['N']):
                 if (not self.grid[y-1][x].walls['E'] and
                         not self.grid[y-1][x+1].walls['W']):
                     return True
-            # Check below
+            """Check potential opening below."""
             if (y < self.height - 1 and not self.grid[y][x].walls['S'] and
                     not self.grid[y][x+1].walls['S']):
                 if (not self.grid[y+1][x].walls['E'] and
@@ -178,13 +179,17 @@ class MazeGenerator:
         dx = next_cell.x - current.x
         dy = next_cell.y - current.y
 
-        if dx == 1:  # Moved East
+        if dx == 1:
+            """Moved East."""
             current.walls['E'], next_cell.walls['W'] = False, False
-        elif dx == -1:  # Moved West
+        elif dx == -1:
+            """Moved West."""
             current.walls['W'], next_cell.walls['E'] = False, False
-        elif dy == 1:  # Moved South
+        elif dy == 1:
+            """Moved South."""
             current.walls['S'], next_cell.walls['N'] = False, False
-        elif dy == -1:  # Moved North
+        elif dy == -1:
+            """Moved North."""
             current.walls['N'], next_cell.walls['S'] = False, False
 
     def _open_entry_exit_walls(self) -> None:
@@ -223,7 +228,7 @@ class MazeGenerator:
             start: None
         }
 
-        # Helper to check whether we are trying to use the forbidden edge
+        """Helper to reject traversal through the forbidden edge."""
         def edge_is_forbidden(a: Tuple[int, int], b: Tuple[int, int]) -> bool:
             if forbidden_edge is None:
                 return False
@@ -236,7 +241,7 @@ class MazeGenerator:
         while queue:
             x, y = queue.pop(0)
             if (x, y) == goal:
-                # Reconstruct path
+                """Reconstruct a path from goal to start using parents."""
                 path: List[Tuple[int, int]] = []
                 cur: Optional[Tuple[int, int]] = goal
                 while cur is not None:
@@ -246,29 +251,29 @@ class MazeGenerator:
                 return path
 
             cell = self.grid[y][x]
-            # Explore neighbors depending on open walls
-            # North
+            """Explore neighbors according to open walls."""
+            """North."""
             if (not cell.walls['N'] and y > 0):
                 nx, ny = x, y - 1
                 if ((nx, ny) not in came_from and
                         not edge_is_forbidden((x, y), (nx, ny))):
                     came_from[(nx, ny)] = (x, y)
                     queue.append((nx, ny))
-            # East
+            """East."""
             if (not cell.walls['E'] and x < self.width - 1):
                 nx, ny = x + 1, y
                 if ((nx, ny) not in came_from and
                         not edge_is_forbidden((x, y), (nx, ny))):
                     came_from[(nx, ny)] = (x, y)
                     queue.append((nx, ny))
-            # South
+            """South."""
             if (not cell.walls['S'] and y < self.height - 1):
                 nx, ny = x, y + 1
                 if ((nx, ny) not in came_from and
                         not edge_is_forbidden((x, y), (nx, ny))):
                     came_from[(nx, ny)] = (x, y)
                     queue.append((nx, ny))
-            # West
+            """West."""
             if (not cell.walls['W'] and x > 0):
                 nx, ny = x - 1, y
                 if ((nx, ny) not in came_from and
@@ -291,7 +296,7 @@ class MazeGenerator:
         if path is None or len(path) <= 1:
             return False
 
-        # Iterate through each consecutive edge of the path found
+        """Iterate through each consecutive edge of the path found"""
         for i in range(len(path) - 1):
             a = path[i]
             b = path[i + 1]
@@ -310,20 +315,20 @@ class MazeGenerator:
         if self._has_multiple_solutions():
             return
 
-        # List of all internal walls that could be opened
+        """List all internal walls that may be opened."""
         candidates: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
         for y in range(self.height):
             for x in range(self.width):
                 cell = self.grid[y][x]
                 if cell.pattern:
                     continue
-                # Eastern neighbor
+                """Inspect eastern neighbor wall."""
                 if x < self.width - 1:
                     neighbor = self.grid[y][x + 1]
                     if (not neighbor.pattern and
                             cell.walls['E'] and neighbor.walls['W']):
                         candidates.append(((x, y), (x + 1, y)))
-                # Southern neighbor
+                """Inspect southern neighbor wall."""
                 if y < self.height - 1:
                     neighbor = self.grid[y + 1][x]
                     if (not neighbor.pattern and
@@ -336,10 +341,10 @@ class MazeGenerator:
             cell1 = self.grid[y1][x1]
             cell2 = self.grid[y2][x2]
 
-            # Remove wall between the two neighboring cells
+            """Open one candidate wall."""
             self._remove_wall(cell1, cell2)
 
-            # Stop as soon as we detect at least two solutions
+            """Stop once multiple solutions are detected."""
             if self._has_multiple_solutions():
                 return
 
@@ -359,11 +364,11 @@ class MazeGenerator:
             current_cell = stack[-1]
             neighbors = self._get_unvisited_neighbors(current_cell)
 
-            # In perfect mode, we generate a classic DFS spanning tree so
-            # every (non-pattern) cell is reachable from any other one.
-            # The open-area heuristic is only applied in non-perfect mode,
-            # because it can otherwise leave some cells unvisited and break
-            # connectivity between entry and exit.
+            """Use classic DFS neighbors in perfect mode.
+
+            In non-perfect mode, filter neighbors with the open-area
+            heuristic to avoid creating large empty regions.
+            """
             if self.perfect:
                 valid_neighbors = neighbors
             else:
@@ -372,20 +377,18 @@ class MazeGenerator:
                     if not self._creates_large_open_area(current_cell, n)
                 ]
             if valid_neighbors:
-                # If there's a valid neighbor, pick one randomly.
+                """Pick and visit a valid neighbor."""
                 next_cell = random.choice(valid_neighbors)
                 self._remove_wall(current_cell, next_cell)
                 next_cell.visited = True
-                stack.append(next_cell)  # Move to the next cell.
+                stack.append(next_cell)
             else:
-                # If there are no valid neighbors, backtrack.
+                """Backtrack when no valid neighbors remain."""
                 stack.pop()
-        # Ensure the entry and exit points have an opening on the maze's
-        # outer border.
-        # self._open_entry_exit_walls()
+        """Optionally open outer border walls for entry and exit."""
+        """self._open_entry_exit_walls()"""
 
-        # In imperfect mode, add loops so multiple paths exist
-        # between entry and exit.
+        """In imperfect mode, add loops for multiple solutions."""
         if not self.perfect:
             self._add_extra_passages()
 
@@ -394,12 +397,13 @@ class MazeGenerator:
         return self.grid
 
     def swap_color(self) -> None:
-        colors_list = ["1",  # Red
-                       "2",  # Green
-                       "3",  # Yellow
-                       "4",  # Blue
-                       "5",  # Purple
-                       "6",  # Cyan
+        """ANSI color indexes used for random palette rotation."""
+        colors_list = ["1",
+                       "2",
+                       "3",
+                       "4",
+                       "5",
+                       "6",
                        "7"
                        ]
         for key in self.colors.keys():
@@ -428,30 +432,30 @@ class MazeGenerator:
         while queue:
             current_cell, path = queue.pop(0)
 
-            # current_cell reach the end
+            """Return as soon as the end cell is reached."""
             if current_cell == end_cell:
                 self.solution = path
                 return path
 
-            # explore neighbors
+            """Explore reachable neighbors."""
             x, y = current_cell.x, current_cell.y
 
-            # North
+            """North."""
             if (not current_cell.walls['N'] and y > 0 and
                     self.grid[y-1][x] not in visited):
                 visited.add(self.grid[y-1][x])
                 queue.append((self.grid[y-1][x], path + "N"))
-            # East
+            """East."""
             if (not current_cell.walls['E'] and x < self.width - 1 and
                     self.grid[y][x+1] not in visited):
                 visited.add(self.grid[y][x+1])
                 queue.append((self.grid[y][x+1], path + "E"))
-            # South
+            """South."""
             if (not current_cell.walls['S'] and y < self.height - 1 and
                     self.grid[y+1][x] not in visited):
                 visited.add(self.grid[y+1][x])
                 queue.append((self.grid[y+1][x], path + "S"))
-            # West
+            """West."""
             if (not current_cell.walls['W'] and x > 0 and
                     self.grid[y][x-1] not in visited):
                 visited.add(self.grid[y][x-1])

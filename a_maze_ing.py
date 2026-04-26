@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/26 17:13:57 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/26 17:20:44 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -121,22 +121,23 @@ def display_maze(generator: MazeGenerator) -> None:
     grid = generator.get_grid()
     h, w = len(grid), len(grid[0])
 
-    # Create a matrix of "tags" to know what to display at each pixel
-    # 'W' = Wall, 'P' = Path, 'S' = Start, 'E' = End, 'X' = Solution
-    # 'F' = pattern 42
+    """Create display tags for each rendered pixel.
+
+    W=wall, P=path, S=start, E=end, X=solution, F=42 pattern.
+    """
     render: List[List[str]] = cast(List[List[str]],
                                    [["W" for _ in range(2 * w + 1)]
                                     for _ in range(2 * h + 1)])
 
-    # Calculate the solution path in render coordinates
+    """Calculate the solution path in render coordinates"""
     sol_coords: Set[Tuple[int, int]] = set()
     if generator.solution:
         curr_x, curr_y = generator.entry
-        # Starting position in render coordinates: (2*y+1, 2*x+1)
+        """Starting position in render coordinates: (2*y+1, 2*x+1)."""
         sol_coords.add((2 * curr_y + 1, 2 * curr_x + 1))
 
         for move in generator.solution:
-            # Mark both the cell and the passage between cells
+            """Mark both traversed cells and passages."""
             dy, dx = 0, 0
             if move == 'N':
                 dy = -1
@@ -147,29 +148,28 @@ def display_maze(generator: MazeGenerator) -> None:
             elif move == 'W':
                 dx = -1
 
-            # The passage (broken wall)
+            """Record the broken wall passage position."""
             sol_coords.add((2 * curr_y + 1 + dy, 2 * curr_x + 1 + dx))
-            # New cell
+            """Record the next cell position."""
             curr_y += dy
             curr_x += dx
             sol_coords.add((2 * curr_y + 1, 2 * curr_x + 1))
 
-    # Carve out the maze in the render matrix
+    """Carve maze cells and openings into the render matrix."""
     for y in range(h):
         for x in range(w):
             ry, rx = 2 * y + 1, 2 * x + 1
             cell = grid[y][x]
 
-            # If cell is part of the "42" pattern, mark it and don't carve
-            # around it (all walls stay)
+            """Keep pattern cells closed and tagged as 42."""
             if getattr(cell, "pattern", False):
                 render[ry][rx] = 'F'
                 continue
 
-            # The cell itself
+            """Tag the current cell as a path."""
             render[ry][rx] = 'P'
 
-            # The walls (if no walls, becomes a path 'P')
+            """Open neighboring render slots for each missing wall."""
             if not cell.walls['N']:
                 render[ry-1][rx] = 'P'
             if not cell.walls['S']:
@@ -179,7 +179,7 @@ def display_maze(generator: MazeGenerator) -> None:
             if not cell.walls['E']:
                 render[ry][rx+1] = 'P'
 
-    # Place solution, entry and exit on top
+    """Overlay solution, entry, and exit markers."""
     for (sy, sx) in sol_coords:
         render[sy][sx] = 'X'
 
@@ -189,7 +189,7 @@ def display_maze(generator: MazeGenerator) -> None:
     ox, oy = generator.exit
     render[2 * oy + 1][2 * ox + 1] = 'E'
 
-    # Final display
+    """Print the final colored maze output."""
     for row in render:
         line = ""
         for char in row:

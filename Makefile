@@ -7,7 +7,7 @@ run:
 	python3 a_maze_ing.py config.txt
 
 debug:
-	python -m pdb a_maze_ing.py config.txt
+	python3 -m pdb a_maze_ing.py config.txt
 
 clean:
 	-del /s /q /f *.pyc
@@ -18,9 +18,9 @@ clean:
 	-rmdir /s /q build
 
 lint:
-	flake8 .
-	mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+	python3 -m flake8 .
+	python3 -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 lint-strict:
-	mypy --strict .
-	flake8 .
+	python3 -m mypy --strict .
+	python3 -m flake8 .
