@@ -3,10 +3,10 @@
 #                                                      :::      ::::::::    #
 #  a_maze_ing.py                                     :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
+#  By: klucchin <klucchin@student.42.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/13 11:32:44 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/26 15:53:06 by klucchin        ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -82,7 +82,7 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
-def write_maze_to_file(generator: MazeGenerator, file: str):
+def write_maze_to_file(generator: MazeGenerator, file: str) -> None:
     """Writes the maze structure and solution to a file."""
     wall = {'N': 0, 'E': 1, 'S': 2, 'W': 3}
 
@@ -114,23 +114,27 @@ def write_maze_to_file(generator: MazeGenerator, file: str):
         sys.exit(1)
 
 
-def display_maze(generator):
+def display_maze(generator: MazeGenerator) -> None:
+    from typing import List, Set, Tuple, cast
     grid = generator.get_grid()
     h, w = len(grid), len(grid[0])
 
-    # 2. On crée une matrice de "tags" pour savoir quoi afficher à chaque pixel
-    # 'W' = Wall, 'P' = Path, 'S' = Start, 'E' = End, 'X' = Solution, 'F' = motif 42
-    render = [["W" for _ in range(2 * w + 1)] for _ in range(2 * h + 1)]
+    # Create a matrix of "tags" to know what to display at each pixel
+    # 'W' = Wall, 'P' = Path, 'S' = Start, 'E' = End, 'X' = Solution
+    # 'F' = pattern 42
+    render: List[List[str]] = cast(List[List[str]],
+                                   [["W" for _ in range(2 * w + 1)]
+                                    for _ in range(2 * h + 1)])
 
-    # 3. On calcule le chemin de la solution en coordonnées de rendu
-    sol_coords = set()
+    # Calculate the solution path in render coordinates
+    sol_coords: Set[Tuple[int, int]] = set()
     if generator.solution:
         curr_x, curr_y = generator.entry
-        # Position de départ dans le rendu : (2*y+1, 2*x+1)
+        # Starting position in render coordinates: (2*y+1, 2*x+1)
         sol_coords.add((2 * curr_y + 1, 2 * curr_x + 1))
 
         for move in generator.solution:
-            # On doit marquer la cellule ET le passage entre les cellules
+            # Mark both the cell and the passage between cells
             dy, dx = 0, 0
             if move == 'N':
                 dy = -1
@@ -141,29 +145,29 @@ def display_maze(generator):
             elif move == 'W':
                 dx = -1
 
-            # Passage (le "mur" cassé)
+            # The passage (broken wall)
             sol_coords.add((2 * curr_y + 1 + dy, 2 * curr_x + 1 + dx))
-            # Nouvelle cellule
+            # New cell
             curr_y += dy
             curr_x += dx
             sol_coords.add((2 * curr_y + 1, 2 * curr_x + 1))
 
-    # 4. On "creuse" le labyrinthe dans la matrice de rendu
+    # Carve out the maze in the render matrix
     for y in range(h):
         for x in range(w):
             ry, rx = 2 * y + 1, 2 * x + 1
             cell = grid[y][x]
 
-            # Si la cellule fait partie du motif "42", on la marque
-            # spécifiquement et on ne creuse pas autour (tous les murs restent).
+            # If cell is part of the "42" pattern, mark it and don't carve
+            # around it (all walls stay)
             if getattr(cell, "pattern", False):
                 render[ry][rx] = 'F'
                 continue
 
-            # La cellule elle-même
+            # The cell itself
             render[ry][rx] = 'P'
 
-            # Les murs (si pas de mur, on devient un chemin 'P')
+            # The walls (if no walls, becomes a path 'P')
             if not cell.walls['N']:
                 render[ry-1][rx] = 'P'
             if not cell.walls['S']:
@@ -173,7 +177,7 @@ def display_maze(generator):
             if not cell.walls['E']:
                 render[ry][rx+1] = 'P'
 
-    # 5. On place la solution, l'entrée et la sortie par-dessus
+    # Place solution, entry and exit on top
     for (sy, sx) in sol_coords:
         render[sy][sx] = 'X'
 
@@ -183,19 +187,19 @@ def display_maze(generator):
     ox, oy = generator.exit
     render[2 * oy + 1][2 * ox + 1] = 'E'
 
-    # 6. Affichage final
+    # Final display
     for row in render:
         line = ""
-        for cell in row:
-            if cell == 'W':
+        for char in row:
+            if char == 'W':
                 line += generator.colors["WALL"]
-            elif cell == 'S':
+            elif char == 'S':
                 line += generator.colors["START"]
-            elif cell == 'E':
+            elif char == 'E':
                 line += generator.colors["END"]
-            elif cell == 'X':
+            elif char == 'X':
                 line += generator.colors["SOL"]
-            elif cell == 'F':
+            elif char == 'F':
                 line += generator.colors["42"]
             else:
                 line += generator.colors["PATH"]
@@ -258,7 +262,7 @@ def generate_maze() -> MazeGenerator:
     return generator
 
 
-def main():
+def main() -> None:
     if (len(sys.argv) != 2):
         print(f"Usage: {sys.argv[0]} <config_file>")
         sys.exit(1)

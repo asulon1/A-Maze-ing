@@ -1,13 +1,13 @@
 # Maze size
-WIDTH=20
-HEIGHT=15
+WIDTH=3
+HEIGHT=4
 
 # Entry / Exit location
 ENTRY=0,0
-EXIT=19,14
+EXIT=0,2
 
 
 OUTPUT_FILE=maze.txt
-PERFECT=True
+PERFECT=False
 
-SEED=4
+#SEED=4

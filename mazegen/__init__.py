@@ -3,10 +3,10 @@
 #                                                      :::      ::::::::    #
 #  __init__.py                                       :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
+#  By: klucchin <klucchin@student.42.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 2026/03/22 12:22:30 by asulon          #+#    #+#               #
-#  Updated: 2026/04/13 11:35:56 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/26 15:52:47 by klucchin        ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -118,8 +118,8 @@ class MazeGenerator:
                     cell.walls[wall] = True
 
     def _get_unvisited_neighbors(self, cell: Cell) -> List[Cell]:
-        """Return unvisited cells next to given cell"""
-        neighbors = []
+        """Return unvisited cells next to given cell."""
+        neighbors: List[Cell] = []
         x, y = cell.x, cell.y
 
         if y > 0 and not self.grid[y - 1][x].visited:
@@ -173,7 +173,7 @@ class MazeGenerator:
                     return True
         return False
 
-    def _remove_wall(self, current: Cell, next_cell: Cell):
+    def _remove_wall(self, current: Cell, next_cell: Cell) -> None:
         """Removes the wall between two adjacent cells."""
         dx = next_cell.x - current.x
         dy = next_cell.y - current.y
@@ -187,7 +187,7 @@ class MazeGenerator:
         elif dy == -1:  # Moved North
             current.walls['N'], next_cell.walls['S'] = False, False
 
-    def _open_entry_exit_walls(self):
+    def _open_entry_exit_walls(self) -> None:
         """Opens the external walls for the entry and exit points."""
         if self.entry[1] == 0:
             self.grid[self.entry[1]][self.entry[0]].walls['N'] = False
@@ -279,19 +279,19 @@ class MazeGenerator:
         return None
 
     def _has_multiple_solutions(self) -> bool:
-        """Returns True s'il existe au moins deux chemins distincts entre
-        l'entrée et la sortie.
+        """Returns True if at least two distinct paths exist between
+        the entry and exit points.
 
-        On calcule d'abord un chemin avec BFS, puis on enlève virtuellement
-        chaque arête de ce chemin une par une. Si, pour au moins une arête,
-        un autre chemin existe encore, alors il y a plus d'une solution.
+        First computes one path using BFS, then virtually removes
+        each edge of that path one by one. If for at least one edge,
+        another path still exists, then there are multiple solutions.
         """
 
         path = self._bfs_path()
         if path is None or len(path) <= 1:
             return False
 
-        # Parcourt chaque arête consécutive du chemin trouvé
+        # Iterate through each consecutive edge of the path found
         for i in range(len(path) - 1):
             a = path[i]
             b = path[i + 1]
@@ -300,31 +300,30 @@ class MazeGenerator:
         return False
 
     def _add_extra_passages(self) -> None:
-        """Ajoute des ouvertures supplémentaires pour créer des boucles.
+        """Adds extra openings to create loops in the maze.
 
-        On ouvre progressivement des murs entre cases voisines aléatoires
-        jusqu'à ce qu'il existe au moins deux chemins différents entre
-        l'entrée et la sortie (ou qu'il n'y ait plus de murs internes à
-        ouvrir).
+        Progressively opens walls between random neighboring cells
+        until at least two different paths exist between entry and exit
+        (or no more internal walls to open).
         """
 
         if self._has_multiple_solutions():
             return
 
-        # Liste de tous les murs internes possibles à ouvrir
+        # List of all internal walls that could be opened
         candidates: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
         for y in range(self.height):
             for x in range(self.width):
                 cell = self.grid[y][x]
                 if cell.pattern:
                     continue
-                # Voisin Est
+                # Eastern neighbor
                 if x < self.width - 1:
                     neighbor = self.grid[y][x + 1]
                     if (not neighbor.pattern and
                             cell.walls['E'] and neighbor.walls['W']):
                         candidates.append(((x, y), (x + 1, y)))
-                # Voisin Sud
+                # Southern neighbor
                 if y < self.height - 1:
                     neighbor = self.grid[y + 1][x]
                     if (not neighbor.pattern and
@@ -337,14 +336,14 @@ class MazeGenerator:
             cell1 = self.grid[y1][x1]
             cell2 = self.grid[y2][x2]
 
-            # Ouvre le mur entre les deux cases voisines
+            # Remove wall between the two neighboring cells
             self._remove_wall(cell1, cell2)
 
-            # Dès qu'on détecte au moins deux solutions, on s'arrête
+            # Stop as soon as we detect at least two solutions
             if self._has_multiple_solutions():
                 return
 
-    def generate(self):
+    def generate(self) -> None:
         stack: List[Cell] = []
 
         start_cell = None
@@ -385,8 +384,8 @@ class MazeGenerator:
         # outer border.
         # self._open_entry_exit_walls()
 
-        # En mode non parfait, on ajoute des boucles pour qu'il existe
-        # plusieurs chemins possibles entre l'entrée et la sortie.
+        # In imperfect mode, add loops so multiple paths exist
+        # between entry and exit.
         if not self.perfect:
             self._add_extra_passages()
 
