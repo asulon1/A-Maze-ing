@@ -3,14 +3,15 @@
 #                                                      :::      ::::::::    #
 #  a_maze_ing.py                                     :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
+#  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/26 17:20:44 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/27 17:59:16 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
 from typing import Dict, Any
+import re
 import sys
 
 from mazegen import MazeGenerator
@@ -45,6 +46,13 @@ def parse_config(filename: str) -> Dict[str, str]:
 def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
     """Check config file keys and values"""
 
+    def parse_coordinate(value: Any, key_name: str) -> tuple[int, int]:
+        """Validate and parse a coordinate in strict 'x,y' format."""
+        if not isinstance(value, str) or not re.fullmatch(r"\d+,\d+", value):
+            raise ConfigError(f"{key_name} must be in 'x,y' format")
+        x_raw, y_raw = value.split(',')
+        return int(x_raw), int(y_raw)
+
     """Checking required keys"""
     required_key = ['WIDTH', 'HEIGHT', 'ENTRY',
                     'EXIT', 'OUTPUT_FILE', 'PERFECT']
@@ -57,8 +65,8 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
         """Assign new values with the correct types to the config keys"""
         config['WIDTH'] = int(config['WIDTH'])
         config['HEIGHT'] = int(config['HEIGHT'])
-        config['ENTRY'] = tuple(map(int, config['ENTRY'].split(',')))
-        config['EXIT'] = tuple(map(int, config['EXIT'].split(',')))
+        config['ENTRY'] = parse_coordinate(config['ENTRY'], 'ENTRY')
+        config['EXIT'] = parse_coordinate(config['EXIT'], 'EXIT')
         perfect_raw = str(config['PERFECT']).strip().upper()
 
         if 'SEED' in config:
