@@ -6,7 +6,7 @@
 #  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 2026/03/22 12:22:30 by asulon          #+#    #+#               #
-#  Updated: 2026/04/26 17:23:08 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/28 22:17:06 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -385,8 +385,6 @@ class MazeGenerator:
             else:
                 """Backtrack when no valid neighbors remain."""
                 stack.pop()
-        """Optionally open outer border walls for entry and exit."""
-        """self._open_entry_exit_walls()"""
 
         """In imperfect mode, add loops for multiple solutions."""
         if not self.perfect:
