@@ -3,10 +3,10 @@
 #                                                      :::      ::::::::    #
 #  a_maze_ing.py                                     :+:      :+:    :+:    #
 #                                                  +:+ +:+         +:+      #
-#  By: asulon <asulon@student.42nice.fr>         +#+  +:+       +#+         #
+#  By: asulon <asulon@student.42.fr>             +#+  +:+       +#+         #
 #                                              +#+#+#+#+#+   +#+            #
 #  Created: 0026/03/08 00:24:33 by sulon           #+#    #+#               #
-#  Updated: 2026/04/27 17:59:16 by asulon          ###   ########.fr        #
+#  Updated: 2026/04/28 16:50:23 by asulon          ###   ########.fr        #
 #                                                                           #
 # ************************************************************************* #
 
@@ -78,9 +78,9 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
     if config['WIDTH'] < 0 or config['HEIGHT'] < 0:
         raise ConfigError("WIDTH and HEIGHT must be positive integers.")
     w, h = config['WIDTH'], config['HEIGHT']
-    if not (0 <= config['ENTRY'][0] <= w and 0 <= config['ENTRY'][1] <= h):
+    if not (0 <= config['ENTRY'][0] < w and 0 <= config['ENTRY'][1] < h):
         raise ConfigError("Entry out of bounds")
-    if not (0 <= config['EXIT'][0] <= w and 0 <= config['EXIT'][1] <= h):
+    if not (0 <= config['EXIT'][0] < w and 0 <= config['EXIT'][1] < h):
         raise ConfigError("Exit out of bounds")
     if config['ENTRY'] == config['EXIT']:
         raise ConfigError(
